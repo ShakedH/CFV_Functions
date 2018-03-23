@@ -3,7 +3,6 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 import json
-import base64
 import numpy as np
 import nltk
 import urllib
@@ -75,8 +74,6 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
 if __name__ == '__main__':
     queue_message = open(os.environ['inputMessage']).read()
     print(queue_message)
-    # queue_message = base64.b64decode(queue_raw_message)
-    # queue_message = queue_raw_message
     # queue_message = r'C:\Users\Ron Michaeli\Desktop\output.json.txt'  # For local testing
     print('Create video inverted index...')
     vii = create_video_inverted_index(queue_message)
