@@ -1,6 +1,3 @@
-import os
-import sys
-
 import json  # json
 import threading  # multi threading
 import os  # for listing directories
@@ -8,9 +5,7 @@ import Queue  # queue used for thread syncronization
 import sys  # system calls
 import argparse  # for parsing arguments
 import base64  # necessary to encode in base64
-#                                  # according to the RFC2045 standard
 import requests  # python HTTP requests library
-# WebSockets
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory, connectWS
 from twisted.python import log
@@ -18,6 +13,8 @@ from twisted.internet import ssl, reactor
 
 from urllib2 import urlopen
 import itertools
+import os
+import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 account_name = 'cfvtes9c07'
@@ -27,12 +24,6 @@ audio_container_name = "segmentscontainer"
 # inputMessage = open(os.environ['inputMessage']).read()
 # message = "Python script processed queue message '{0}'".format(inputMessage)
 # print(message)
-
-try:
-    raw_input  # Python 2
-except NameError:
-    raw_input = input  # Python 3
-
 
 class Utils:
 
