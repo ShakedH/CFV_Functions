@@ -31,6 +31,8 @@ import sys  # system calls
 import argparse  # for parsing arguments
 import base64  # necessary to encode in base64
 #                                  # according to the RFC2045 standard
+from urllib2 import urlopen
+
 import requests  # python HTTP requests library
 
 # WebSockets
@@ -196,9 +198,10 @@ class WSInterfaceProtocol(WebSocketClientProtocol):
         # start sending audio right away (it will get buffered in the
         # STT service)
         print(self.uttFilename)
-        with open(str(self.uttFilename), 'rb') as f:
-            self.bytesSent = 0
-            dataFile = f.read()
+        audio_file_url = 'https://cfvtes9c07.blob.core.windows.net/segmentscontainer/test.wav'
+        print audio_file_url
+        audio_file_object = urlopen(audio_file_url)
+        dataFile = audio_file_object.read()
         self.maybeSendChunk(dataFile)
         print("onOpen ends")
 
