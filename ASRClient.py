@@ -1,28 +1,6 @@
 import os
 import sys
 
-#
-
-#
-# Copyright IBM Corp. 2014
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
-# Author: Daniel Bolanos
-# Date:   2015
-
-# coding=utf-8
 import json  # json
 import threading  # multi threading
 import os  # for listing directories
@@ -31,17 +9,19 @@ import sys  # system calls
 import argparse  # for parsing arguments
 import base64  # necessary to encode in base64
 #                                  # according to the RFC2045 standard
-from urllib2 import urlopen
-
 import requests  # python HTTP requests library
-
 # WebSockets
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory, connectWS
 from twisted.python import log
 from twisted.internet import ssl, reactor
 
+from urllib2 import urlopen
+import itertools
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
+account_name = 'cfvtes9c07'
+audio_container_name = "segmentscontainer"
 #
 # # read the queue message and write to stdout
 # inputMessage = open(os.environ['inputMessage']).read()
@@ -198,8 +178,8 @@ class WSInterfaceProtocol(WebSocketClientProtocol):
         # start sending audio right away (it will get buffered in the
         # STT service)
         print(self.uttFilename)
-        audio_file_url = 'https://cfvtes9c07.blob.core.windows.net/segmentscontainer/test.wav'
-        print audio_file_url
+        audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(account_name, audio_container_name,
+                                                                             self.uttFilename)
         audio_file_object = urlopen(audio_file_url)
         dataFile = audio_file_object.read()
         self.maybeSendChunk(dataFile)
@@ -236,7 +216,6 @@ class WSInterfaceProtocol(WebSocketClientProtocol):
                     # with open(self.fileJson, "a") as f:
                     #     f.write(json.dumps(jsonObject, indent=4,
                     #                        sort_keys=True))
-                    import itertools
                     res = jsonObject['results'][0]
                     hypothesis = '. '.join(
                         [result['alternatives'][0]['transcript'].strip() for result in jsonObject['results']])
