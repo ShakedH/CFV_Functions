@@ -16,9 +16,9 @@ audio_container_name = "audiocontainer"
 audio_segments_container_name = "audio-segments-container"
 block_blob_service = BlockBlobService(account_name, account_key)
 
-min_silence_len_param = 1000
+min_silence_len_param = 1000    # window size
 silence_thresh_param = -36
-seek_step_param = 1000
+seek_step_param = 1000  # window offset step
 keep_silence_param = 0
 
 
@@ -27,10 +27,10 @@ def split_audio_file_by_silence(audio_file_name):
     audio_file_object = urlopen(audio_file_url)
     audio_segment = AudioSegment(audio_file_object)
 
-    # test = silence.detect_nonsilent(audio_segment,
-    #                                 min_silence_len=min_silence_len_param,
-    #                                 silence_thresh=silence_thresh_param,
-    #                                 seek_step=seek_step_param)
+    # print silence.detect_nonsilent(audio_segment,
+    #                                min_silence_len=min_silence_len_param,
+    #                                silence_thresh=silence_thresh_param,
+    #                                seek_step=seek_step_param)
 
     return silence.split_on_silence(audio_segment,
                                     min_silence_len=min_silence_len_param,
@@ -54,5 +54,9 @@ def upload_segments_to_container(audio_file_name, audio_segments, dest_container
 if __name__ == "__main__":
     # queue_message = open(os.environ["inputMessage"]).read()
     queue_message = 'english-2Minutes.wav'  # for local testing
+    print "File name:", queue_message
+    print "Splitting file to segments..."
     audio_segments = split_audio_file_by_silence(queue_message)
+    print "Split to", len(audio_segments), "segments"
+    print "Uploading segments to", audio_segments_container_name, "container"
     upload_segments_to_container(queue_message, audio_segments, audio_segments_container_name)
