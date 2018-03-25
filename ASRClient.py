@@ -1,22 +1,20 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
+
 import json  # json
 import threading  # multi threading
-import os  # for listing directories
 import Queue  # queue used for thread syncronization
-import sys  # system calls
 import argparse  # for parsing arguments
 import base64  # necessary to encode in base64
 import requests  # python HTTP requests library
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory, connectWS
-from twisted.python import log
 from twisted.internet import ssl, reactor
 
 from urllib2 import urlopen
 import itertools
-import os
-import sys
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 
 
 class Utils:
@@ -262,11 +260,11 @@ asr_credentials = '853a3e00-bd09-4d31-8b78-312058948303:YOBwYe01gUeG'
 
 if __name__ == '__main__':
 
-    # inputMessage = open(os.environ['inputMessage']).read()
+    inputMessage = open(os.environ['inputMessage']).read()
     # inputMessage = '{"name":"test.wav"}'
     # message_obj = json.loads(inputMessage)
     # fileName = message_obj['name']
-    fileName = 'english-2Minutes_1.wav'
+    fileName = inputMessage
     content = 'audio/wav'
     model = 'en-US_BroadbandModel'
     threads = 1
