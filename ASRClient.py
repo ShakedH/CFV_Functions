@@ -1,29 +1,21 @@
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
+
 import json  # json
 import threading  # multi threading
-import os  # for listing directories
 import Queue  # queue used for thread syncronization
-import sys  # system calls
 import argparse  # for parsing arguments
 import base64  # necessary to encode in base64
 import requests  # python HTTP requests library
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory, connectWS
-from twisted.python import log
 from twisted.internet import ssl, reactor
 
 from urllib2 import urlopen
 import itertools
-import os
-import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
-account_name = 'cfvtes9c07'
-audio_container_name = "segmentscontainer"
-#
-# # read the queue message and write to stdout
-# inputMessage = open(os.environ['inputMessage']).read()
-# message = "Python script processed queue message '{0}'".format(inputMessage)
-# print(message)
 
 class Utils:
 
@@ -262,21 +254,30 @@ def check_credentials(credentials):
             '"%s" is not a valid format for the credentials ' % credentials)
 
 
+account_name = 'cfvtes9c07'
+audio_container_name = "audio-segments-container"
+asr_credentials = '853a3e00-bd09-4d31-8b78-312058948303:YOBwYe01gUeG'
+
 if __name__ == '__main__':
 
-    credentials = '853a3e00-bd09-4d31-8b78-312058948303:YOBwYe01gUeG'
-    fileName = 'test.wav'
+    inputMessage = open(os.environ['inputMessage']).read()
+    # inputMessage = '{"name":"test.wav"}'
+    # message_obj = json.loads(inputMessage)
+    # fileName = message_obj['name']
+    fileName = inputMessage
     content = 'audio/wav'
     model = 'en-US_BroadbandModel'
     threads = 1
+    # Not relevant but necessary:
     diroutput = 'output'
+
     q = Queue.Queue()
     q.put((0, fileName))
 
     hostname = "stream.watsonplatform.net"
     headers = {}
     # authentication header
-    auth = credentials
+    auth = asr_credentials
     headers["Authorization"] = "Basic " + base64.b64encode(auth)
     # create a WS server factory with our protocol
     fmt = "wss://{}/speech-to-text/api/v1/recognize?model={}"
@@ -300,4 +301,4 @@ if __name__ == '__main__':
     reactor.run()
 
     emptyHypotheses = 0
-    info = summary.items()
+    print(summary)
