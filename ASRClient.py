@@ -296,9 +296,8 @@ def get_transcript(file_name):
 
     reactor.run()
 
-    emptyHypotheses = 0
     return {
-        'file_name':file_name,
+        'file_name': file_name,
         'transcript': summary[0]['hypothesis'],
         'timestamps': summary['timestamps']
     }
