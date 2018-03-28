@@ -40,14 +40,14 @@ def split_audio_file_by_silence(audio_file_name):
 
 
 def upload_segments_to_container(audio_file_name, audio_segments, dest_container_name):
-    audio_file_name = os.path.splitext(audio_file_name)[0]  # remove extension
-    content_settings = ContentSettings(content_type="audio/x-wav")
+    audio_file_name = os.path.splitext(audio_file_name)[0]  # file name without extension
+    audio_file_extension = os.path.splitext(audio_file_name)[1]  # file extension
+    # content_settings = ContentSettings(content_type="audio/x-wav")
     i = 1
     for audio_segment in audio_segments:
         block_blob_service.create_blob_from_bytes(container_name=dest_container_name,
-                                                  blob_name="{0}_{1}.wav".format(audio_file_name, i),
-                                                  blob=bytes(audio_segment.raw_data),
-                                                  content_settings=content_settings)
+                                                  blob_name="{0}_{1}.{2}".format(audio_file_name, i, audio_file_extension),
+                                                  blob=bytes(audio_segment.raw_data))
         i += 1
 
 
