@@ -15,6 +15,7 @@ from twisted.internet import ssl, reactor
 
 from urllib2 import urlopen
 import itertools
+from azure.storage.queue import QueueService
 
 
 class Utils:
@@ -297,6 +298,7 @@ def get_transcript(file_name):
 
     emptyHypotheses = 0
     return {
+        'file_name':file_name,
         'transcript': summary[0]['hypothesis'],
         'timestamps': summary['timestamps']
     }
@@ -309,9 +311,20 @@ def update_start_time(data, start_time):
     return new_data
 
 
+def enqueue_message(qname, message):
+    storage_acc_name = 'cfvtes9c07'
+    storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
+    message = base64.b64encode(message.encode('ascii')).decode()
+    queue_service = QueueService(account_name=storage_acc_name, account_key=storage_acc_key)
+    queue_service.put_message(qname, message)
+
+
 if __name__ == '__main__':
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
+    print('started function\nFile Name: ' + message_obj['file_name'] + '\nStart_time: ' + str(
+        message_obj['start_time']))
     data = get_transcript(file_name=message_obj['file_name'])
     data = update_start_time(data, message_obj['start_time'])
     print(data)
+    enqueue_message('indexq', json.dumps(data))
