@@ -258,13 +258,8 @@ account_name = 'cfvtes9c07'
 audio_container_name = "audio-segments-container"
 asr_credentials = '853a3e00-bd09-4d31-8b78-312058948303:YOBwYe01gUeG'
 
-if __name__ == '__main__':
 
-    inputMessage = open(os.environ['inputMessage']).read()
-    # inputMessage = '{"name":"test.wav"}'
-    # message_obj = json.loads(inputMessage)
-    # fileName = message_obj['name']
-    fileName = inputMessage
+def get_transcript(file_name):
     content = 'audio/wav'
     model = 'en-US_BroadbandModel'
     threads = 1
@@ -272,7 +267,7 @@ if __name__ == '__main__':
     diroutput = 'output'
 
     q = Queue.Queue()
-    q.put((0, fileName))
+    q.put((0, file_name))
 
     hostname = "stream.watsonplatform.net"
     headers = {}
@@ -301,4 +296,22 @@ if __name__ == '__main__':
     reactor.run()
 
     emptyHypotheses = 0
-    print(summary)
+    return {
+        'transcript': summary[0]['hypothesis'],
+        'timestamps': summary['timestamps']
+    }
+
+
+def update_start_time(data, start_time):
+    new_data = data.copy()
+    new_timestamps = [[record[0], record[1] + start_time, record[2] + start_time] for record in data['timestamps']]
+    new_data['timestamps'] = new_timestamps
+    return new_data
+
+
+if __name__ == '__main__':
+    inputMessage = open(os.environ['inputMessage']).read()
+    message_obj = json.loads(inputMessage)
+    data = get_transcript(file_name=message_obj['file_name'])
+    data = update_start_time(data, message_obj['start_time'])
+    print(data)
