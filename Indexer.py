@@ -10,7 +10,7 @@ import urllib
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 from azure.storage.blob import BlockBlobService
-from azure.cosmosdb.table import TableService, Entity
+from azure.storage.table import TableService, Entity
 
 account_name = 'cfvtes9c07'
 account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
