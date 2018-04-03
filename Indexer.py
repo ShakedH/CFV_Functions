@@ -10,7 +10,7 @@ import urllib
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 from azure.storage.blob import BlockBlobService
-from azure.storage.table import TableService, Entity
+from azure.cosmosdb.table import TableService, Entity
 
 account_name = 'cfvtes9c07'
 account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
@@ -35,25 +35,19 @@ def get_sentence(word_index, paragraph):
     return ' '.join(split_sentence)
 
 
-def create_video_inverted_index(transcript_file_name):
-    transcript_file = block_blob_service.get_blob_to_text(transcript_container_name, transcript_file_name)
-    transcript_dict = json.loads(transcript_file.content)
-    # transcript_dict = json.loads(open(transcript_file_name).read())  # For local testing
+def create_video_inverted_index(transcript, timestamps):
     video_inverted_index = {}
-    for result_block in transcript_dict['response']['results']:
-        alternative = result_block['alternatives'][0]
-        paragraph = alternative['transcript']
-        word_index = -1
-        for word_info in alternative['words']:
-            word_index += 1
-            start_time = word_info['startTime'][:-1]
-            word = word_info['word']
-            parsed_word = parse_word(word)
-            if not parsed_word:
-                continue
-            if parsed_word not in video_inverted_index:
-                video_inverted_index[parsed_word] = {}
-            video_inverted_index[parsed_word][start_time] = get_sentence(word_index, paragraph)
+    word_index = -1
+    for word_data in timestamps:
+        word_index += 1
+        start_time = word_data[1]
+        word = word_data[0]
+        parsed_word = parse_word(word)
+        if not parsed_word:
+            continue
+        if parsed_word not in video_inverted_index:
+            video_inverted_index[parsed_word] = {}
+        video_inverted_index[parsed_word][start_time] = get_sentence(word_index, transcript)
     return video_inverted_index
 
 
@@ -72,11 +66,13 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
 
 
 if __name__ == '__main__':
-    queue_message = open(os.environ['inputMessage']).read()
-    print(queue_message)
-    # queue_message = r'C:\Users\Ron Michaeli\Desktop\output.json.txt'  # For local testing
+    inputMessage = open(os.environ['inputMessage']).read()
+    message_obj = json.loads(inputMessage)
+    ID = message_obj['ID']
+    transcript = message_obj['transcript']
+    timestamps = message_obj['timestamps']
     print('Create video inverted index...')
-    vii = create_video_inverted_index(queue_message)
+    vii = create_video_inverted_index(transcript=transcript, timestamps=timestamps)
     print('Updating Azure table...')
-    update_inverted_indexes_azure_table(queue_message, vii)
+    update_inverted_indexes_azure_table(ID, vii)
     print('Done!')

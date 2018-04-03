@@ -1,0 +1,18 @@
+# video-to-extractor-q:
+    String containing ID (name of blob)
+
+# splitter-to-asr-q:
+    Json:
+    {
+        "ID": 'video_ID',
+        "files": [{"file_name": 'xyz.wav', "start_time": 100}] #array of objects
+    }
+
+# asr-to-parser-q:
+    Json:
+    {
+        "ID": 'video_ID',
+        "transcript": string,
+        # Array of arrays, each one with 3 elements - the word, start time, end time:
+        "timestamps": [[word,start,end],[word,start,end]]
+    }
