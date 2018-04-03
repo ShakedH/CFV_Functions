@@ -53,16 +53,19 @@ def create_video_inverted_index(transcript, timestamps):
 
 def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
     for term in video_inverted_index:
-        entity = Entity()
-        entity.PartitionKey = vid_id
-        entity.RowKey = urllib.quote_plus(term)
-        entity.Status = 'Unscanned'
-        appearances = {}
-        for timestamp in video_inverted_index[term]:
-            sentence = video_inverted_index[term][timestamp]
-            appearances[timestamp] = sentence
-        entity.Appearances = json.dumps(appearances)
-        table_service.insert_entity('VideosInvertedIndexes', entity)
+        try:
+            entity = Entity()
+            entity.PartitionKey = vid_id
+            entity.RowKey = urllib.quote_plus(term)
+            entity.Status = 'Unscanned'
+            for timestamp in video_inverted_index[term]:
+                sentence = video_inverted_index[term][timestamp]
+                # property name for start time 21.19 will be t_21_19
+                entity['t_' + str(timestamp).replace('.', '_')] = sentence
+            table_service.insert_or_merge_entity('VideosInvertedIndexes', entity)
+        except Exception as e:
+            print ('Failed adding term ' + term)
+            print(e)
 
 
 if __name__ == '__main__':
