@@ -1,0 +1,17 @@
+# video-to-extractor-q:
+    String containing file id (name of blob)
+
+# asr-q:
+    Json:
+    {
+        files: [{file_name: string, start_time: int}] #array of objects
+    }
+
+#indexq:
+    Json:
+    {
+        file_name: string,
+        transcript: string,
+        # Array of arrays, each one with 3 elements - the word, start time, end time:
+        timestamps: [[word,start,end],[word,start,end]]
+    }
