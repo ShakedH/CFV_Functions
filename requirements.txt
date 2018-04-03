@@ -4,6 +4,9 @@ azure==2.0.0
 numpy
 nltk
 
+# AudioSplitter:
+pydub
+
 # ASR Client:
 SpeechRecognition
 # ASR Client_old:
