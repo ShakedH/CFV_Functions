@@ -1,3 +1,6 @@
+# video-to-extractor-q:
+    String containing file id (name of blob)
+
 # asr-q:
     Json:
     {
