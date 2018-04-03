@@ -11,6 +11,7 @@ import speech_recognition as sr
 from urllib2 import urlopen, Request, HTTPError, URLError
 from azure.storage.queue import QueueService
 from threading import Thread
+from azure.storage.blob import BlockBlobService, PublicAccess
 
 
 def recognize_ibm(audio_data, username, password, language="en-US", show_all=False):
@@ -94,12 +95,22 @@ def enqueue_message(qname, message):
     queue_service.put_message(qname, message)
 
 
+def delete_blob(blob_name, container_name):
+    storage_account_name = 'cfvtes9c07'
+    storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
+    block_blob_service = BlockBlobService(account_name=storage_account_name, account_key=storage_acc_key)
+    # Set the permission so the blobs are public.
+    block_blob_service.set_container_acl(container_name, public_access=PublicAccess.Container)
+    block_blob_service.delete_blob(container_name=container_name, blob_name=blob_name)
+
+
 def process_segment(file, start, q_name):
     print('started analyzing segment. File Name: ' + file + '. Start_time: ' + str(start))
     data = get_transcript(file_name=file)
     data = update_start_time(data, start)
     print('Finished segment starting in ' + str(start))
     enqueue_message(q_name, json.dumps(data))
+    delete_blob(file, 'audio-segments-container')
 
 
 def main():
