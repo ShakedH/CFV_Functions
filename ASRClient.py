@@ -104,15 +104,15 @@ def delete_blob(blob_name, container_name):
     block_blob_service.delete_blob(container_name=container_name, blob_name=blob_name)
 
 
-def process_segment(vid_id, file, start, q_name):
+def process_segment(vid_id, file_name, start, q_name):
     try:
-        print('started analyzing segment. File Name: ' + file + '. Start_time: ' + str(start))
-        data = get_transcript(file_name=file)
+        print('started analyzing segment. File Name: ' + file_name + '. Start_time: ' + str(start))
+        data = get_transcript(file_name=file_name)
         data = update_start_time(data, start)
         data['ID'] = vid_id
         print('Finished segment starting in ' + str(start))
         enqueue_message(q_name, json.dumps(data))
-        delete_blob(file, 'audio-segments-container')
+        delete_blob(file_name, 'audio-segments-container')
     except Exception as e:
         print e
 
