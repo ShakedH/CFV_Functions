@@ -114,10 +114,12 @@ def process_segment(file, start, q_name):
 
 
 def main():
+    # for tests:
+    # message_obj = {"files": [{"file_name": "test.wav", "start_time": 100}]}
+
     print('started function app')
-    # inputMessage = open(os.environ['inputMessage']).read()
-    # message_obj = json.loads(inputMessage)
-    message_obj = {"files": [{"file_name": "test.wav", "start_time": 100}]}
+    inputMessage = open(os.environ['inputMessage']).read()
+    message_obj = json.loads(inputMessage)
     files = message_obj['files']
     print('Started processing files')
     threads = []
