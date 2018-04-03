@@ -4,6 +4,9 @@ azure==2.0.0
 numpy
 nltk
 
+# AudioSplitter:
+pydub
+
 # ASR Client:
 autobahn>=0.10.9
 pyOpenSSL>=0.13.1
