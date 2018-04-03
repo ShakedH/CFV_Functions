@@ -132,7 +132,7 @@ def main():
     for file in files:
         file_name = file['file_name']
         start_time = file['start_time']
-        t = Thread(target=process_segment, args=(vid_id, file_name, start_time, 'indexq'))
+        t = Thread(target=process_segment, args=(vid_id, file_name, start_time, 'asr-to-parse-q'))
         threads.append(t)
         t.start()
 
