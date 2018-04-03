@@ -105,13 +105,16 @@ def delete_blob(blob_name, container_name):
 
 
 def process_segment(vid_id, file, start, q_name):
-    print('started analyzing segment. File Name: ' + file + '. Start_time: ' + str(start))
-    data = get_transcript(file_name=file)
-    data = update_start_time(data, start)
-    data['ID'] = vid_id
-    print('Finished segment starting in ' + str(start))
-    enqueue_message(q_name, json.dumps(data))
-    delete_blob(file, 'audio-segments-container')
+    try:
+        print('started analyzing segment. File Name: ' + file + '. Start_time: ' + str(start))
+        data = get_transcript(file_name=file)
+        data = update_start_time(data, start)
+        data['ID'] = vid_id
+        print('Finished segment starting in ' + str(start))
+        enqueue_message(q_name, json.dumps(data))
+        delete_blob(file, 'audio-segments-container')
+    except Exception as e:
+        print e
 
 
 def main():
@@ -127,14 +130,11 @@ def main():
     threads = []
 
     for file in files:
-        try:
-            file_name = file['file_name']
-            start_time = file['start_time']
-            t = Thread(target=process_segment, args=(vid_id, file_name, start_time, 'indexq'))
-            threads.append(t)
-            t.start()
-        except Exception as e:
-            print e
+        file_name = file['file_name']
+        start_time = file['start_time']
+        t = Thread(target=process_segment, args=(vid_id, file_name, start_time, 'indexq'))
+        threads.append(t)
+        t.start()
 
     for t in threads:
         t.join()
