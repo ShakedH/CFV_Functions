@@ -124,7 +124,7 @@ def main():
 
     for t in threads:
         t.join()
-    print('finished!')
+    print('finished processing ' + str(len(files)) + ' segments')
 
 
 if __name__ == '__main__':
