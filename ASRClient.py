@@ -9,8 +9,8 @@ import json
 from urllib import urlencode
 import speech_recognition as sr
 from urllib2 import urlopen, Request, HTTPError, URLError
-
 from azure.storage.queue import QueueService
+import threading
 
 
 def recognize_ibm(audio_data, username, password, language="en-US", show_all=False):
@@ -105,12 +105,23 @@ def enqueue_message(qname, message):
     queue_service.put_message(qname, message)
 
 
+def process_segment(file, start, q_name):
+    print('started function. File Name: ' + file_name + '. Start_time: ' + str(start_time))
+    data = get_transcript(file_name=file)
+    data = update_start_time(data, start)
+    print('Finished segment starting in ' + start)
+    enqueue_message(q_name, json.dumps(data))
+
+
 if __name__ == '__main__':
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
-    print('started function\nFile Name: ' + message_obj['file_name'] + '\nStart_time: ' + str(
-        message_obj['start_time']))
-    data = get_transcript(file_name=message_obj['file_name'])
-    data = update_start_time(data, message_obj['start_time'])
-    print(data)
-    enqueue_message('indexq', json.dumps(data))
+    files = message_obj['files']
+    print('Started processing files')
+    for file in files:
+        try:
+            file_name = file['file_name']
+            start_time = file['start_time']
+            threading.Thread(target=process_segment, args=(file_name, start_time, 'indexq'))
+        except Exception as e:
+            print e
