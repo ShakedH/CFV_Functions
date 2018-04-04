@@ -13,6 +13,9 @@ from azure.storage.queue import QueueService
 from threading import Thread
 from azure.storage.blob import BlockBlobService, PublicAccess
 
+storage_acc_name = 'cfvtes9c07'
+storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
+
 
 def recognize_ibm(audio_data, username, password, language="en-US", show_all=False):
     assert isinstance(audio_data, sr.AudioData), "Data must be audio data"
@@ -61,15 +64,6 @@ def recognize_ibm(audio_data, username, password, language="en-US", show_all=Fal
 def get_transcript(audio):
     IBM_USERNAME = "853a3e00-bd09-4d31-8b78-312058948303"  # IBM Speech to Text usernames are strings of the form XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
     IBM_PASSWORD = "YOBwYe01gUeG"  # IBM Speech to Text passwords are mixed-case alphanumeric strings
-    # storage_account_name = 'cfvtes9c07'
-    # audio_container_name = "audio-segments-container"
-    # audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_account_name, audio_container_name,
-    #                                                                      file_name)
-    # audio_obj = urlopen(audio_file_url)
-    #
-    # r = sr.Recognizer()
-    # with sr.AudioFile(audio_obj) as source:
-    #     audio = r.record(source)  # read the entire audio file
     ibm_results = recognize_ibm(audio_data=audio, username=IBM_USERNAME, password=IBM_PASSWORD,
                                 show_all=True)
     data = {'transcript': '. '.join(
@@ -88,17 +82,13 @@ def update_start_time(data, start_time):
 
 
 def enqueue_message(qname, message):
-    storage_acc_name = 'cfvtes9c07'
-    storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
     message = base64.b64encode(message.encode('ascii')).decode()
     queue_service = QueueService(account_name=storage_acc_name, account_key=storage_acc_key)
     queue_service.put_message(qname, message)
 
 
 def delete_blob(blob_name, container_name):
-    storage_account_name = 'cfvtes9c07'
-    storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
-    block_blob_service = BlockBlobService(account_name=storage_account_name, account_key=storage_acc_key)
+    block_blob_service = BlockBlobService(account_name=storage_acc_name, account_key=storage_acc_key)
     # Set the permission so the blobs are public.
     block_blob_service.set_container_acl(container_name, public_access=PublicAccess.Container)
     block_blob_service.delete_blob(container_name=container_name, blob_name=blob_name)
@@ -126,9 +116,8 @@ def main():
     vid_id = message_obj['ID']
     print('Started processing file')
 
-    storage_account_name = 'cfvtes9c07'
     audio_container_name = "audiocontainer"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_account_name, audio_container_name,
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
                                                                          file_name)
     audio_obj = urlopen(audio_file_url)
     print('Finished Reading file named ' + file_name)
