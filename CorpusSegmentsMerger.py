@@ -26,3 +26,4 @@ for record in terms.items:
 sorted_time_term_dic = {k: time_term_dic[k] for k in sorted(time_term_dic)}
 
 transcript = " ".join(sorted_time_term_dic.values())
+print (transcript)

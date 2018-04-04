@@ -8,6 +8,12 @@
         "file_name": 'file_name'
     }
 
+# asr-to-corpus-seg-merger-q
+Json:
+    {
+        "ID": 'video_ID'
+    }
+
 # asr-to-parser-q:
     Json:
     {
