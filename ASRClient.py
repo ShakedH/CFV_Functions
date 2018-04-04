@@ -119,12 +119,12 @@ def main():
     # for tests:
     # message_obj = {"ID": "Test", "files": 'english-2Minutes.wav'}
 
-    print('started function app')
+    print('Started function app')
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
     file_name = message_obj['files']
     vid_id = message_obj['ID']
-    print('Started processing files')
+    print('Started processing file')
 
     storage_account_name = 'cfvtes9c07'
     audio_container_name = "audiocontainer"
@@ -147,7 +147,7 @@ def main():
     for t in threads:
         t.join()
 
-    delete_blob(file_name, 'audio-segments-container')
+    delete_blob(file_name, 'audiocontainer')
 
     print('finished processing ' + str(len(file_name)) + ' segments')
 
