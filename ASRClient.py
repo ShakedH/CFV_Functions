@@ -58,25 +58,25 @@ def recognize_ibm(audio_data, username, password, language="en-US", show_all=Fal
     return "\n".join(transcription)
 
 
-def get_transcript(file_name):
+def get_transcript(audio):
     IBM_USERNAME = "853a3e00-bd09-4d31-8b78-312058948303"  # IBM Speech to Text usernames are strings of the form XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
     IBM_PASSWORD = "YOBwYe01gUeG"  # IBM Speech to Text passwords are mixed-case alphanumeric strings
-    storage_account_name = 'cfvtes9c07'
-    audio_container_name = "audio-segments-container"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_account_name, audio_container_name,
-                                                                         file_name)
-    audio_obj = urlopen(audio_file_url)
+    # storage_account_name = 'cfvtes9c07'
+    # audio_container_name = "audio-segments-container"
+    # audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_account_name, audio_container_name,
+    #                                                                      file_name)
+    # audio_obj = urlopen(audio_file_url)
+    #
+    # r = sr.Recognizer()
+    # with sr.AudioFile(audio_obj) as source:
+    #     audio = r.record(source)  # read the entire audio file
+    ibm_results = recognize_ibm(audio_data=audio, username=IBM_USERNAME, password=IBM_PASSWORD,
+                                show_all=True)
+    data = {'transcript': '. '.join(
+        [result['alternatives'][0]['transcript'].strip() for result in ibm_results['results']]),
 
-    r = sr.Recognizer()
-    with sr.AudioFile(audio_obj) as source:
-        audio = r.record(source)  # read the entire audio file
-    results = recognize_ibm(audio_data=audio, username=IBM_USERNAME, password=IBM_PASSWORD,
-                            show_all=True)
-    data = {"file_name": file_name}
-    data['transcript'] = '. '.join(
-        [result['alternatives'][0]['transcript'].strip() for result in results['results']])
-    data['timestamps'] = list(itertools.chain.from_iterable(
-        [results['alternatives'][0]['timestamps'] for results in results['results']]))
+        'timestamps': list(itertools.chain.from_iterable(
+            [results['alternatives'][0]['timestamps'] for results in ibm_results['results']]))}
     return data
 
 
@@ -104,41 +104,52 @@ def delete_blob(blob_name, container_name):
     block_blob_service.delete_blob(container_name=container_name, blob_name=blob_name)
 
 
-def process_segment(vid_id, file_name, start, q_name):
+def process_segment(audio, ID, start_time, q_name):
     try:
-        print('started analyzing segment. File Name: ' + file_name + '. Start_time: ' + str(start))
-        data = get_transcript(file_name=file_name)
-        data = update_start_time(data, start)
-        data['ID'] = vid_id
-        print('Finished segment starting in ' + str(start))
+        data = get_transcript(audio)
+        data = update_start_time(data, start_time)
+        data['ID'] = ID
+        print('Ended processing segment starting in ' + str(start_time))
         enqueue_message(q_name, json.dumps(data))
-        delete_blob(file_name, 'audio-segments-container')
     except Exception as e:
         print e
 
 
 def main():
     # for tests:
-    # message_obj = {"files": [{"file_name": "test.wav", "start_time": 100}]}
+    # message_obj = {"ID": "Test", "files": 'english-2Minutes.wav'}
 
     print('started function app')
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
-    files = message_obj['files']
+    file_name = message_obj['files']
     vid_id = message_obj['ID']
     print('Started processing files')
-    threads = []
 
-    for file in files:
-        file_name = file['file_name']
-        start_time = file['start_time']
-        t = Thread(target=process_segment, args=(vid_id, file_name, start_time, 'asr-to-parser-q'))
-        threads.append(t)
-        t.start()
+    storage_account_name = 'cfvtes9c07'
+    audio_container_name = "audiocontainer"
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_account_name, audio_container_name,
+                                                                         file_name)
+    audio_obj = urlopen(audio_file_url)
+    print('Finished Reading file named ' + file_name)
+    r = sr.Recognizer()
+    start = 0
+    duration = 10
+    threads = []
+    with sr.AudioFile(audio_obj) as source:
+        while start < source.DURATION:
+            audio = r.record(source, duration=duration)  # read the entire audio file
+            t = Thread(target=process_segment, args=(audio, vid_id, start, 'asr-to-parser-q'))
+            threads.append(t)
+            t.start()
+            start += duration
 
     for t in threads:
         t.join()
-    print('finished processing ' + str(len(files)) + ' segments')
+
+    delete_blob(file_name, 'audio-segments-container')
+
+    print('finished processing ' + str(len(file_name)) + ' segments')
 
 
 if __name__ == '__main__':
