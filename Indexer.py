@@ -57,7 +57,6 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
             entity = Entity()
             entity.PartitionKey = vid_id
             entity.RowKey = urllib.quote_plus(term)
-            entity.Status = 'Unscanned'
             for timestamp in video_inverted_index[term]:
                 sentence = video_inverted_index[term][timestamp]
                 # property name for start time 21.19 will be t_21_19
@@ -69,11 +68,11 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
 
 
 if __name__ == '__main__':
-    # inputMessage = open(os.environ['inputMessage']).read()
-    # message_obj = json.loads(inputMessage)
-    message_obj = {"file_name": "0003.wav", "transcript": "N. injuring a caddy", "ID": "test",
-                   "timestamps": [["N.", 40.87, 21.11], ["injuring", 41.11, 21.77], ["a", 41.77, 21.91],
-                                  ["caddy", 41.91, 22.57]]}
+    inputMessage = open(os.environ['inputMessage']).read()
+    message_obj = json.loads(inputMessage)
+    # message_obj = {"file_name": "0003.wav", "transcript": "N. injuring a caddy", "ID": "test",
+    #                "timestamps": [["N.", 40.87, 21.11], ["injuring", 41.11, 21.77], ["a", 41.77, 21.91],
+    #                               ["caddy", 41.91, 22.57]]}
     ID = message_obj['ID']
     transcript = message_obj['transcript']
     timestamps = message_obj['timestamps']
