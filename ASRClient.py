@@ -109,10 +109,10 @@ def process_segment(audio, ID, start_time, q_name):
 
 def main():
     # for tests:
-    # message_obj = {"ID": "Test", "files": 'english-2Minutes.wav'}
+    message_obj = {"ID": "Test1", "file_name": 'english-2Minutes.wav'}
     print('Started function app')
-    inputMessage = open(os.environ['inputMessage']).read()
-    message_obj = json.loads(inputMessage)
+    # inputMessage = open(os.environ['inputMessage']).read()
+    # message_obj = json.loads(inputMessage)
     file_name = message_obj['file_name']
     vid_id = message_obj['ID']
     print('Started processing file')
