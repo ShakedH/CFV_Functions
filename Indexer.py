@@ -4,13 +4,14 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 import json
 import numpy as np
-import nltk
+# import nltk
 import urllib
+from our_stopwords import stop_words
 
-nltk.download('stopwords')
-from nltk.corpus import stopwords
+# nltk.download('stopwords')
+# from nltk.corpus import stopwords
 from azure.storage.blob import BlockBlobService
-from azure.storage.table import TableService, Entity
+from azure.cosmosdb.table import TableService, Entity
 
 account_name = 'cfvtes9c07'
 account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
@@ -18,7 +19,7 @@ transcript_container_name = 'transcriptscontainer'
 videos_container_name = 'videoscontainer'
 block_blob_service = BlockBlobService(account_name, account_key)
 table_service = TableService(account_name, account_key)
-stop_words = set(stopwords.words('english'))
+# stop_words = set(stopwords.words('english'))
 context_margin = 5
 
 
@@ -57,6 +58,7 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
             entity = Entity()
             entity.PartitionKey = vid_id
             entity.RowKey = urllib.quote_plus(term)
+            entity.Status = 'Unscanned'
             for timestamp in video_inverted_index[term]:
                 sentence = video_inverted_index[term][timestamp]
                 # property name for start time 21.19 will be t_21_19

@@ -102,7 +102,7 @@ def process_segment(audio, ID, start_time, q_name):
         print('Ended processing segment starting in ' + str(start_time))
         enqueue_message(q_name, json.dumps(data))
         # add start time and transcript to dic
-        _time_transcript_dic[start_time] = data['transcript']
+        _time_transcript_dic[int(start_time)] = data['transcript']
     except Exception as e:
         print
         e
@@ -149,6 +149,7 @@ _time_transcript_dic = {}
 
 def save_dic_to_blob(vid_id):
     # save dic as blob
+    vid_id = vid_id.replace(".mp4",".txt")
     account_name = 'cfvtes9c07'
     account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
     corpus_seg_container_name = "corpus-segments-container"
