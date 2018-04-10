@@ -108,13 +108,12 @@ def process_segment(audio, ID, start_time, q_name):
 
 
 def main():
-    # for tests:
-    message_obj = {"ID": "english-2Minutes.wav", "file_name": 'english-2Minutes.wav'}
     print('Started function app')
-    # inputMessage = open(os.environ['inputMessage']).read()
-    # message_obj = json.loads(inputMessage)
+    inputMessage = open(os.environ['inputMessage']).read()
+    message_obj = json.loads(inputMessage)
     file_name = message_obj['file_name']
     vid_id = message_obj['ID']
+    max_duration = float(message_obj['duration'])
     print('Started processing file')
 
     audio_container_name = "audiocontainer"
@@ -127,8 +126,8 @@ def main():
     duration = 10
     threads = []
     with sr.AudioFile(audio_obj) as source:
-        while start < source.DURATION:
-            audio = r.record(source, duration=duration)  # read the entire audio file
+        while start < max_duration:
+            audio = r.record(source, duration=min(max_duration - start, duration))  # read the entire audio file
             t = Thread(target=process_segment, args=(audio, vid_id, start, 'asr-to-parser-q'))
             threads.append(t)
             t.start()
@@ -141,13 +140,13 @@ def main():
 
     delete_blob(file_name, 'audiocontainer')
 
-    print('finished processing ' + str(len(file_name)) + ' segments')
+    print('finished processing ' + str(len(threads)) + ' segments')
+
 
 _time_transcript_dic = {}
 
 
 def save_dic_to_blob(vid_id):
-
     # save dic as blob
     account_name = 'cfvtes9c07'
     account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
@@ -167,6 +166,7 @@ def save_dic_to_blob(vid_id):
     message = base64.b64encode(message.encode("ascii")).decode()
     queue_service.put_message(queue_name, message)
     print ("Sent message:" + message)
+
 
 if __name__ == '__main__':
     main()
