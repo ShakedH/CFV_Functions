@@ -12,7 +12,7 @@ def get_segments_dic_from_container(id):
     corpus_seg_container_name = "corpus-segments-container"
     dic_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(account_name, corpus_seg_container_name,id)
     dic_file_object = urlopen(dic_file_url)
-    dic_json = json.loads(dic_file_object.read())
+    dic_json = dict(json.loads(dic_file_object.read()))
     return dic_json
 
 def write_full_transcript_to_blob(id,transcript):
@@ -28,15 +28,15 @@ def write_full_transcript_to_blob(id,transcript):
 
 if __name__ == '__main__':
     # test
-    #message_obj = {"ID": "Test1"}
+    #message_obj = {"ID": "english-2Minutes.wav.txt"}
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
     ID = message_obj['ID']
     segments_dic = get_segments_dic_from_container(ID)
-    sorted_segments_dic = {k: segments_dic[k] for k in sorted(segments_dic)}
-    transcript = " ".join(sorted_segments_dic.values())
+    sorted_transcript_list = [segments_dic[k] for k in sorted(segments_dic.keys())]
+    transcript = " ".join(sorted_transcript_list)
     write_full_transcript_to_blob(ID, transcript)
-
+    print(transcript)
 
 
 

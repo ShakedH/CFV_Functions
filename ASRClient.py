@@ -102,14 +102,14 @@ def process_segment(audio, ID, start_time, q_name):
         print('Ended processing segment starting in ' + str(start_time))
         enqueue_message(q_name, json.dumps(data))
         # add start time and transcript to dic
-        _time_transcript_dic[start_time] = data['transcript']
+        _time_transcript_dic[int(start_time)] = data['transcript']
     except Exception as e:
         print e
 
 
 def main():
     # for tests:
-    message_obj = {"ID": "Test1", "file_name": 'english-2Minutes.wav'}
+    message_obj = {"ID": "english-2Minutes.wav", "file_name": 'english-2Minutes.wav'}
     print('Started function app')
     # inputMessage = open(os.environ['inputMessage']).read()
     # message_obj = json.loads(inputMessage)
@@ -152,17 +152,17 @@ def save_dic_to_blob(vid_id):
     account_name = 'cfvtes9c07'
     account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
     corpus_seg_container_name = "corpus-segments-container"
-    blob_name = vid_id
+    blob_name = vid_id+".txt"
     print ("saving dic as blob...")
     block_blob_service = BlockBlobService(account_name, account_key)
-    block_blob_service.create_blob_from_text(corpus_seg_container_name,blob_name,json.dumps(_time_transcript_dic))
+    block_blob_service.create_blob_from_text(corpus_seg_container_name,blob_name,json.dumps(_time_transcript_dic.items()))
 
     # add message to asr-to-CorpusSegMerger queue
     queue_service = QueueService(account_name=account_name, account_key=account_key)
     queue_name = "asr-to-corpus-seg-merger-q"
 
     print ('Creating message for queue:' + queue_name)
-    message = {"ID": vid_id}
+    message = {"ID": blob_name}
     message = json.dumps(message)
     message = base64.b64encode(message.encode("ascii")).decode()
     queue_service.put_message(queue_name, message)
