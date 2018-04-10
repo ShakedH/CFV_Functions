@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 from azure.storage.blob import BlockBlobService
 from azure.storage.queue import QueueService
@@ -27,15 +26,15 @@ def get_audio_file_from_container(audio_file_name):
     # return AudioSegment(audio_file_object)
 
     # region Testing
-    # PROBLEM: AudioSegment.raw_data is corrupted so the wav files are unreadable
-    import wave
-    w_file = wave.open(audio_file_object)
-    num_of_frames = w_file.getnframes()
-    x = w_file.readframes(num_of_frames)
-    w_file.close()
-    block_blob_service.create_blob_from_bytes(container_name=audio_segments_container_name,
-                                              blob_name="RonTest.wav",
-                                              blob=x)
+    # a = audio_file_object.read()
+    # len(a) = 44 + (4 * frame_rate * duration) not sure if always 4 or (sample_width * channels)
+    # duration = (len(a) - 44) / (4 * frame_rate)
+    # import wave
+    # w_file = wave.open(audio_file_object)
+    block_blob_service.create_blob_from_stream(container_name=audio_segments_container_name,
+                                               blob_name="RonTest_c.wav",
+                                               stream=audio_file_object)
+    # w_file.close()
     print ""
     # endregion
 
