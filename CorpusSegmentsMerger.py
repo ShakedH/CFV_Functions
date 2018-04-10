@@ -28,7 +28,7 @@ def write_full_transcript_to_blob(id,transcript):
 
 if __name__ == '__main__':
     # test
-    #message_obj = {"ID": "english-2Minutes.wav.txt"}
+    # message_obj = {"ID": "english-2Minutes.wav.txt"}
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
     ID = message_obj['ID']

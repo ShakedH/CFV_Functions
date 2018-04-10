@@ -165,7 +165,7 @@ def save_dic_to_blob(vid_id):
     message = json.dumps(message)
     message = base64.b64encode(message.encode("ascii")).decode()
     queue_service.put_message(queue_name, message)
-    print ("Sent message:" + message)
+    print("Sent message:" + message)
 
 
 if __name__ == '__main__':
