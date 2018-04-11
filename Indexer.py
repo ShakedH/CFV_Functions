@@ -74,7 +74,7 @@ def update_video_index_progress_table(ID, total_segments, index):
         entity = Entity()
         entity.PartitionKey = ID
         entity.RowKey = total_segments
-        entity[index] = index
+        entity['t_' + index] = index
         table_service.insert_or_merge_entity('VideosIndexProgress', entity)
     except Exception as e:
         print(e)
