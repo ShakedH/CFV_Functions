@@ -97,13 +97,13 @@ def delete_blob(blob_name, container_name):
     block_blob_service.delete_blob(container_name=container_name, blob_name=blob_name)
 
 
-def process_segment(audio, ID, start_time, q_name):
+def process_segment(audio, ID, start_time, index, q_name):
     try:
         data = get_transcript(audio)
         data = update_start_time(data, start_time)
         data['ID'] = ID
         data['total_segments'] = TOTAL_SEGMENTS
-        data['start'] = start_time
+        data['index'] = index
         print('Ended processing segment starting in ' + str(start_time))
         enqueue_message(q_name, json.dumps(data))
         # add start time and transcript to dic
@@ -165,10 +165,11 @@ def main():
     with sr.AudioFile(audio_obj) as source:
         while start < max_duration:
             audio = r.record(source, duration=min(max_duration - start, duration))  # read the entire audio file
-            t = Thread(target=process_segment, args=(audio, vid_id, start, 'asr-to-parser-q'))
+            t = Thread(target=process_segment, args=(audio, vid_id, start, segment_counter, 'asr-to-parser-q'))
             threads.append(t)
             t.start()
             start += duration
+            segment_counter += 1
 
     for t in threads:
         t.join()

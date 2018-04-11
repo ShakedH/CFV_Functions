@@ -69,12 +69,12 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
             print(e)
 
 
-def update_video_index_progress_table(ID, total_segments, start):
+def update_video_index_progress_table(ID, total_segments, index):
     try:
         entity = Entity()
         entity.PartitionKey = ID
         entity.RowKey = total_segments
-        entity['t_' + str(start).replace(".", "_")] = start
+        entity[index] = index
         table_service.insert_or_merge_entity('VideosIndexProgress', entity)
     except Exception as e:
         print(e)
@@ -87,11 +87,11 @@ if __name__ == '__main__':
     transcript = message_obj['transcript']
     timestamps = message_obj['timestamps']
     total_segments = message_obj['total_segments']
-    start = message_obj['start']
+    index = message_obj['index']
     print('Create video inverted index...')
     vii = create_video_inverted_index(transcript=transcript, timestamps=timestamps)
     print('Updating Azure table...')
     update_inverted_indexes_azure_table(ID, vii)
 
-    update_video_index_progress_table(ID, total_segments, start)
+    update_video_index_progress_table(ID, total_segments, index)
     print('Done!')
