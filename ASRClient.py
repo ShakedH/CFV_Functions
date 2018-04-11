@@ -159,6 +159,10 @@ def main():
 
     global TOTAL_SEGMENTS
     TOTAL_SEGMENTS = math.ceil(max_duration / duration)
+    entity = Entity()
+    entity.PartitionKey = vid_id
+    entity.RowKey = TOTAL_SEGMENTS
+    table_service.insert_entity('VideosIndexProgress', entity)
     print('Created Record in VideosIndexProgress Table')
 
     threads = []
