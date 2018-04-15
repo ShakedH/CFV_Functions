@@ -1,21 +1,25 @@
 # video-to-extractor-q:
     String containing ID (name of blob)
 
+
 # extractor-to-asr-q:
-    Json:
+    JSON:
     {
         "ID": 'video_ID',
-        "file_name": 'file_name'
+        "file_name": 'file_name',
+        "duration": duration_in_seconds
     }
+
 
 # asr-to-corpus-seg-merger-q
-Json:
-    {
-        "ID": 'video_ID'
-    }
+    JSON:
+        {
+            "ID": 'video_ID'
+        }
+
 
 # asr-to-parser-q:
-    Json:
+    JSON:
     {
         "ID": 'video_ID',
         "transcript": string,
