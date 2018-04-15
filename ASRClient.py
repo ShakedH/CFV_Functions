@@ -3,6 +3,7 @@ import sys
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 
+import math
 import base64
 import itertools
 import json
@@ -12,9 +13,11 @@ from urllib2 import urlopen, Request, HTTPError, URLError
 from azure.storage.queue import QueueService
 from threading import Thread
 from azure.storage.blob import BlockBlobService, PublicAccess
+from azure.cosmosdb.table import TableService, Entity
 
 storage_acc_name = 'cfvtes9c07'
 storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
+table_service = TableService(storage_acc_name, storage_acc_key)
 
 
 def recognize_ibm(audio_data, username, password, language="en-US", show_all=False):
@@ -94,54 +97,19 @@ def delete_blob(blob_name, container_name):
     block_blob_service.delete_blob(container_name=container_name, blob_name=blob_name)
 
 
-def process_segment(audio, ID, start_time, q_name):
+def process_segment(audio, ID, start_time, index, q_name):
     try:
         data = get_transcript(audio)
         data = update_start_time(data, start_time)
         data['ID'] = ID
+        data['total_segments'] = TOTAL_SEGMENTS
+        data['index'] = index
         print('Ended processing segment starting in ' + str(start_time))
         enqueue_message(q_name, json.dumps(data))
         # add start time and transcript to dic
         _time_transcript_dic[int(start_time)] = data['transcript']
     except Exception as e:
-        print
-        e
-
-
-def main():
-    print('Started function app')
-    inputMessage = open(os.environ['inputMessage']).read()
-    message_obj = json.loads(inputMessage)
-    file_name = message_obj['file_name']
-    vid_id = message_obj['ID']
-    max_duration = float(message_obj['duration'])
-    print('Started processing file')
-
-    audio_container_name = "audiocontainer"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
-                                                                         file_name)
-    audio_obj = urlopen(audio_file_url)
-    print('Finished Reading file named ' + file_name)
-    r = sr.Recognizer()
-    start = 0
-    duration = 10
-    threads = []
-    with sr.AudioFile(audio_obj) as source:
-        while start < max_duration:
-            audio = r.record(source, duration=min(max_duration - start, duration))  # read the entire audio file
-            t = Thread(target=process_segment, args=(audio, vid_id, start, 'asr-to-parser-q'))
-            threads.append(t)
-            t.start()
-            start += duration
-
-    for t in threads:
-        t.join()
-
-    save_dic_to_blob(vid_id)
-
-    delete_blob(file_name, 'audiocontainer')
-
-    print('finished processing ' + str(len(threads)) + ' segments')
+        print e
 
 
 _time_transcript_dic = {}
@@ -149,7 +117,7 @@ _time_transcript_dic = {}
 
 def save_dic_to_blob(vid_id):
     # save dic as blob
-    vid_id = vid_id.replace(".mp4",".txt")
+    vid_id = vid_id.replace(".mp4", ".txt")
     account_name = 'cfvtes9c07'
     account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
     corpus_seg_container_name = "corpus-segments-container"
@@ -168,6 +136,53 @@ def save_dic_to_blob(vid_id):
     message = base64.b64encode(message.encode("ascii")).decode()
     queue_service.put_message(queue_name, message)
     print("Sent message:" + message)
+
+
+def main():
+    print('Started function app')
+    inputMessage = open(os.environ['inputMessage']).read()
+    message_obj = json.loads(inputMessage)
+    file_name = message_obj['file_name']
+    vid_id = message_obj['ID']
+    max_duration = float(message_obj['duration'])
+    print('Started processing file')
+
+    audio_container_name = "audiocontainer"
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
+                                                                         file_name)
+    audio_obj = urlopen(audio_file_url)
+    print('Finished Reading file named ' + file_name)
+    r = sr.Recognizer()
+    start = 0
+    duration = 10.0
+    segment_counter = 0
+
+    global TOTAL_SEGMENTS
+    TOTAL_SEGMENTS = math.ceil(max_duration / duration)
+    entity = Entity()
+    entity.PartitionKey = vid_id
+    entity.RowKey = TOTAL_SEGMENTS
+    table_service.insert_entity('VideosIndexProgress', entity)
+    print('Created Record in VideosIndexProgress Table')
+
+    threads = []
+    with sr.AudioFile(audio_obj) as source:
+        while start < max_duration:
+            audio = r.record(source, duration=min(max_duration - start, duration))  # read the entire audio file
+            t = Thread(target=process_segment, args=(audio, vid_id, start, segment_counter, 'asr-to-parser-q'))
+            threads.append(t)
+            t.start()
+            start += duration
+            segment_counter += 1
+
+    for t in threads:
+        t.join()
+
+    save_dic_to_blob(vid_id)
+
+    delete_blob(file_name, 'audiocontainer')
+
+    print('finished processing ' + str(len(threads)) + ' segments')
 
 
 if __name__ == '__main__':
