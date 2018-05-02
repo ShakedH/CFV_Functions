@@ -7,6 +7,7 @@ import math
 import base64
 import itertools
 import json
+import pyodbc
 from urllib import urlencode
 import speech_recognition as sr
 from urllib2 import urlopen, Request, HTTPError, URLError
@@ -20,6 +21,7 @@ storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v
 table_service = TableService(storage_acc_name, storage_acc_key)
 
 
+# region STT
 def recognize_ibm(audio_data, username, password, language="en-US", show_all=False):
     assert isinstance(audio_data, sr.AudioData), "Data must be audio data"
     assert isinstance(username, str), "``username`` must be a string"
@@ -122,6 +124,26 @@ def process_segment(audio, ID, start_time, index, q_name):
         print e
 
 
+# endregion
+
+# region Confidence
+def update_confidence_in_metadata(vidId, confidence):
+    server = 'cfvtest.database.windows.net'
+    database = 'cfvtest'
+    username = 'drasco'
+    server_password = 'testTest1'
+    driver = '{ODBC Driver 13 for SQL Server}'
+    cnxn = pyodbc.connect(
+        'DRIVER=' + driver + ';PORT=1433;SERVER=' + server + ';PORT=1443;DATABASE=' + database + ';UID=' + username + ';PWD=' + server_password)
+    cursor = cnxn.cursor()
+    query = "UPDATE {0} SET [confidence] = {1} WHERE [vid_id] = '{2}'".format('VideosMetaData', confidence, vidId)
+    cursor.execute(query)
+    cnxn.commit()
+
+
+# endregion
+
+# region Transcript dictionary
 _time_transcript_dic = {}
 
 
@@ -146,6 +168,8 @@ def save_dic_to_blob(vid_id):
     queue_service.put_message(queue_name, message)
     print("Sent message:" + message)
 
+
+# endregion
 
 def main():
     print('Started function app')
@@ -193,6 +217,9 @@ def main():
     save_dic_to_blob(vid_id)
 
     delete_blob(file_name, 'audiocontainer')
+
+    confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
+    update_confidence_in_metadata(vidId=vid_id, confidence=confidence)
 
     print('finished processing ' + str(len(threads)) + ' segments')
 
