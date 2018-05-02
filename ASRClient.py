@@ -69,11 +69,18 @@ def get_transcript(audio):
     IBM_PASSWORD = "Q7X0JQ2zyg5k"  # IBM Speech to Text passwords are mixed-case alphanumeric strings
     ibm_results = recognize_ibm(audio_data=audio, username=IBM_USERNAME, password=IBM_PASSWORD,
                                 show_all=True)
-    data = {'transcript': '. '.join(
-        [result['alternatives'][0]['transcript'].strip() for result in ibm_results['results']]),
+    transcript_segments = []
+    alternatives = []
+    for result in ibm_results['results']:
+        transcript_segments.append(result['alternatives'][0]['transcript'].strip())
+        alternatives.append(result['alternatives'][0]['timestamps'])
+        SEGMENTS_CONFIDENCE.append(result['alternatives'][0]['confidence'])
 
-        'timestamps': list(itertools.chain.from_iterable(
-            [results['alternatives'][0]['timestamps'] for results in ibm_results['results']]))}
+    data = {
+        'transcript': '. '.join(transcript_segments),
+        'timestamps': list(itertools.chain.from_iterable(alternatives))
+    }
+
     return data
 
 
@@ -103,7 +110,7 @@ def process_segment(audio, ID, start_time, index, q_name):
             data = get_transcript(audio)
             data = update_start_time(data, start_time)
         except Exception:
-            data = {'timestamps': [],'transcript':''}
+            data = {'timestamps': [], 'transcript': ''}
         data['ID'] = ID
         data['total_segments'] = TOTAL_SEGMENTS
         data['index'] = index
@@ -123,10 +130,11 @@ def save_dic_to_blob(vid_id):
     account_name = 'cfvtes9c07'
     account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
     corpus_seg_container_name = "corpus-segments-container"
-    blob_name = vid_id+".txt"
+    blob_name = vid_id + ".txt"
     print("saving dic as blob...")
     block_blob_service = BlockBlobService(account_name, account_key)
-    block_blob_service.create_blob_from_text(corpus_seg_container_name, blob_name, json.dumps(_time_transcript_dic.items()))
+    block_blob_service.create_blob_from_text(corpus_seg_container_name, blob_name,
+                                             json.dumps(_time_transcript_dic.items()))
     # add message to asr-to-CorpusSegMerger queue
     queue_service = QueueService(account_name=account_name, account_key=account_key)
     queue_name = "asr-to-corpus-seg-merger-q"
@@ -165,6 +173,9 @@ def main():
     entity.RowKey = str(TOTAL_SEGMENTS)
     table_service.insert_entity('VideosIndexProgress', entity)
     print('Created Record in VideosIndexProgress Table')
+
+    global SEGMENTS_CONFIDENCE
+    SEGMENTS_CONFIDENCE = []
 
     threads = []
     with sr.AudioFile(audio_obj) as source:
