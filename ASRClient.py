@@ -218,6 +218,7 @@ def main():
 
     delete_blob(file_name, 'audiocontainer')
 
+    print('Adding confidence to VideosMetaData table')
     confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
     update_confidence_in_metadata(vidId=vid_id, confidence=confidence)
 
