@@ -1,6 +1,9 @@
+# AudioExtractor:
+scipy
+
 # Indexer:
 requests
-azure==2.0.0
+azure
 numpy
 nltk
 
@@ -9,6 +12,8 @@ pydub
 
 # ASR Client:
 SpeechRecognition
+
+
 # ASR Client_old:
 #autobahn>=0.10.9
 #pyOpenSSL>=0.13.1

@@ -64,5 +64,3 @@ if __name__ == '__main__':
     response = open(os.environ['res'], 'w')
     response.write(json.dumps(dic))
     response.close()
-
-K

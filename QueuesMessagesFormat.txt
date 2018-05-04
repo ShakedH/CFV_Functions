@@ -23,6 +23,6 @@
     {
         "ID": 'video_ID',
         "transcript": string,
-        # Array of arrays, each one with 3 elements - the word, start time, end time:
-        "timestamps": [[word,start,end],[word,start,end]]
+        # List of lists, each one with 3 elements - word, start time, end time:
+        "timestamps": [[word, start, end], [word, start, end], ...]
     }

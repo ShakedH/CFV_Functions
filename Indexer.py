@@ -4,12 +4,8 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 import json
 import numpy as np
-# import nltk
 import urllib
 from our_stopwords import stop_words
-
-# nltk.download('stopwords')
-# from nltk.corpus import stopwords
 from azure.storage.blob import BlockBlobService
 from azure.cosmosdb.table import TableService, Entity
 
@@ -19,7 +15,6 @@ transcript_container_name = 'transcriptscontainer'
 videos_container_name = 'videoscontainer'
 block_blob_service = BlockBlobService(account_name, account_key)
 table_service = TableService(account_name, account_key)
-# stop_words = set(stopwords.words('english'))
 context_margin = 5
 
 
@@ -75,6 +70,7 @@ def update_video_index_progress_table(ID, total_segments, index):
         entity.PartitionKey = ID
         entity.RowKey = total_segments
         entity['t_' + str(index)] = index
+        print('entity #' + str(index))
         table_service.merge_entity('VideosIndexProgress', entity)
     except Exception as e:
         print(e)
@@ -92,6 +88,6 @@ if __name__ == '__main__':
     vii = create_video_inverted_index(transcript=transcript, timestamps=timestamps)
     print('Updating Azure table...')
     update_inverted_indexes_azure_table(ID, vii)
-
+    print('Updating Progress table...')
     update_video_index_progress_table(ID, total_segments, index)
     print('Done!')

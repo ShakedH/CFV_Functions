@@ -7,6 +7,7 @@ import math
 import base64
 import itertools
 import json
+import pyodbc
 from urllib import urlencode
 import speech_recognition as sr
 from urllib2 import urlopen, Request, HTTPError, URLError
@@ -20,6 +21,7 @@ storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v
 table_service = TableService(storage_acc_name, storage_acc_key)
 
 
+# region STT
 def recognize_ibm(audio_data, username, password, language="en-US", show_all=False):
     assert isinstance(audio_data, sr.AudioData), "Data must be audio data"
     assert isinstance(username, str), "``username`` must be a string"
@@ -65,15 +67,22 @@ def recognize_ibm(audio_data, username, password, language="en-US", show_all=Fal
 
 
 def get_transcript(audio):
-    IBM_USERNAME = "853a3e00-bd09-4d31-8b78-312058948303"  # IBM Speech to Text usernames are strings of the form XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-    IBM_PASSWORD = "YOBwYe01gUeG"  # IBM Speech to Text passwords are mixed-case alphanumeric strings
+    IBM_USERNAME = "b2953aea-1687-4545-ad0d-241dfe0de6c8"  # IBM Speech to Text usernames are strings of the form XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+    IBM_PASSWORD = "Q7X0JQ2zyg5k"  # IBM Speech to Text passwords are mixed-case alphanumeric strings
     ibm_results = recognize_ibm(audio_data=audio, username=IBM_USERNAME, password=IBM_PASSWORD,
                                 show_all=True)
-    data = {'transcript': '. '.join(
-        [result['alternatives'][0]['transcript'].strip() for result in ibm_results['results']]),
+    transcript_segments = []
+    alternatives = []
+    for result in ibm_results['results']:
+        transcript_segments.append(result['alternatives'][0]['transcript'].strip())
+        alternatives.append(result['alternatives'][0]['timestamps'])
+        SEGMENTS_CONFIDENCE.append(result['alternatives'][0]['confidence'])
 
-        'timestamps': list(itertools.chain.from_iterable(
-            [results['alternatives'][0]['timestamps'] for results in ibm_results['results']]))}
+    data = {
+        'transcript': '. '.join(transcript_segments),
+        'timestamps': list(itertools.chain.from_iterable(alternatives))
+    }
+
     return data
 
 
@@ -99,8 +108,11 @@ def delete_blob(blob_name, container_name):
 
 def process_segment(audio, ID, start_time, index, q_name):
     try:
-        data = get_transcript(audio)
-        data = update_start_time(data, start_time)
+        try:
+            data = get_transcript(audio)
+            data = update_start_time(data, start_time)
+        except Exception:
+            data = {'timestamps': [], 'transcript': ''}
         data['ID'] = ID
         data['total_segments'] = TOTAL_SEGMENTS
         data['index'] = index
@@ -112,59 +124,84 @@ def process_segment(audio, ID, start_time, index, q_name):
         print e
 
 
+# endregion
+
+# region Confidence
+def update_confidence_in_metadata(vidId, confidence):
+    server = 'cfvtest.database.windows.net'
+    database = 'cfvtest'
+    username = 'drasco'
+    server_password = 'testTest1'
+    driver = '{ODBC Driver 13 for SQL Server}'
+    cnxn = pyodbc.connect(
+        'DRIVER=' + driver + ';PORT=1433;SERVER=' + server + ';PORT=1443;DATABASE=' + database + ';UID=' + username + ';PWD=' + server_password)
+    cursor = cnxn.cursor()
+    query = "UPDATE {0} SET [confidence] = {1} WHERE [vid_id] = '{2}'".format('VideosMetaData', confidence, vidId)
+    cursor.execute(query)
+    cnxn.commit()
+
+
+# endregion
+
+# region Transcript dictionary
 _time_transcript_dic = {}
 
 
 def save_dic_to_blob(vid_id):
     # save dic as blob
-    vid_id = vid_id.replace(".mp4", ".txt")
     account_name = 'cfvtes9c07'
     account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
     corpus_seg_container_name = "corpus-segments-container"
-    blob_name = vid_id
+    blob_name = vid_id + ".txt"
     print("saving dic as blob...")
     block_blob_service = BlockBlobService(account_name, account_key)
-    block_blob_service.create_blob_from_text(corpus_seg_container_name, blob_name, json.dumps(_time_transcript_dic))
-
+    block_blob_service.create_blob_from_text(corpus_seg_container_name, blob_name,
+                                             json.dumps(_time_transcript_dic.items()))
     # add message to asr-to-CorpusSegMerger queue
     queue_service = QueueService(account_name=account_name, account_key=account_key)
     queue_name = "asr-to-corpus-seg-merger-q"
-
     print('Creating message for queue:' + queue_name)
-    message = {"ID": vid_id}
+    message = {"ID": blob_name}
     message = json.dumps(message)
     message = base64.b64encode(message.encode("ascii")).decode()
     queue_service.put_message(queue_name, message)
     print("Sent message:" + message)
 
 
+# endregion
+
 def main():
     print('Started function app')
+
     inputMessage = open(os.environ['inputMessage']).read()
     message_obj = json.loads(inputMessage)
     file_name = message_obj['file_name']
     vid_id = message_obj['ID']
     max_duration = float(message_obj['duration'])
+
     print('Started processing file')
 
     audio_container_name = "audiocontainer"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
-                                                                         file_name)
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name, file_name)
     audio_obj = urlopen(audio_file_url)
+
     print('Finished Reading file named ' + file_name)
+
     r = sr.Recognizer()
     start = 0
     duration = 10.0
     segment_counter = 0
-
     global TOTAL_SEGMENTS
     TOTAL_SEGMENTS = math.ceil(max_duration / duration)
     entity = Entity()
-    entity.PartitionKey = vid_id
-    entity.RowKey = TOTAL_SEGMENTS
+    entity.PartitionKey = str(vid_id)
+    entity.RowKey = str(TOTAL_SEGMENTS)
     table_service.insert_entity('VideosIndexProgress', entity)
+
     print('Created Record in VideosIndexProgress Table')
 
+    global SEGMENTS_CONFIDENCE
+    SEGMENTS_CONFIDENCE = []
     threads = []
     with sr.AudioFile(audio_obj) as source:
         while start < max_duration:
@@ -174,13 +211,15 @@ def main():
             t.start()
             start += duration
             segment_counter += 1
-
     for t in threads:
         t.join()
-
     save_dic_to_blob(vid_id)
-
     delete_blob(file_name, 'audiocontainer')
+
+    print('Adding confidence to VideosMetaData table')
+
+    confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
+    update_confidence_in_metadata(vidId=vid_id, confidence=confidence)
 
     print('finished processing ' + str(len(threads)) + ' segments')
 
