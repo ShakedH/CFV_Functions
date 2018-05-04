@@ -12,6 +12,7 @@ pydub
 
 # ASR Client:
 SpeechRecognition
+pyodbc
 
 
 # ASR Client_old:
