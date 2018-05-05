@@ -212,7 +212,7 @@ def main():
 
     print('Adding confidence to VideosMetaData table')
 
-    # confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
+    confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
     update_confidence_in_metadata(vid_id=vid_id, confidence=confidence)
 
     print('finished processing ' + str(len(threads)) + ' segments')
