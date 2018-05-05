@@ -4,17 +4,17 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
 
 import math
-import base64
-import itertools
 import json
-import pyodbc
-from urllib import urlencode
+import base64
+import requests
+import itertools
 import speech_recognition as sr
+from threading import Thread
+from urllib import urlencode
 from urllib2 import urlopen, Request, HTTPError, URLError
 from azure.storage.queue import QueueService
-from threading import Thread
-from azure.storage.blob import BlockBlobService, PublicAccess
 from azure.cosmosdb.table import TableService, Entity
+from azure.storage.blob import BlockBlobService, PublicAccess
 
 storage_acc_name = 'cfvtes9c07'
 storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
@@ -127,18 +127,12 @@ def process_segment(audio, ID, start_time, index, q_name):
 # endregion
 
 # region Confidence
-def update_confidence_in_metadata(vidId, confidence):
-    server = 'cfvtest.database.windows.net'
-    database = 'cfvtest'
-    username = 'drasco'
-    server_password = 'testTest1'
-    driver = '{ODBC Driver 13 for SQL Server}'
-    cnxn = pyodbc.connect(
-        'DRIVER=' + driver + ';PORT=1433;SERVER=' + server + ';PORT=1443;DATABASE=' + database + ';UID=' + username + ';PWD=' + server_password)
-    cursor = cnxn.cursor()
-    query = "UPDATE {0} SET [confidence] = {1} WHERE [vid_id] = '{2}'".format('VideosMetaData', confidence, vidId)
-    cursor.execute(query)
-    cnxn.commit()
+def update_confidence_in_metadata(vid_id, confidence):
+    print("Updating VMD with confidence...")
+    server_url = 'https://cfvtest.azurewebsites.net'
+    data = {'videoID': vid_id, 'columnName': 'confidence', 'columnValue': confidence}
+    r = requests.post(server_url + "/updateVMD", data=json.dumps(data))
+    print(r.status_code, r.reason)
 
 
 # endregion
@@ -218,8 +212,8 @@ def main():
 
     print('Adding confidence to VideosMetaData table')
 
-    confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
-    update_confidence_in_metadata(vidId=vid_id, confidence=confidence)
+    # confidence = sum(SEGMENTS_CONFIDENCE) / len(SEGMENTS_CONFIDENCE) if len(SEGMENTS_CONFIDENCE) != 0 else 0
+    update_confidence_in_metadata(vid_id=vid_id, confidence=confidence)
 
     print('finished processing ' + str(len(threads)) + ' segments')
 
