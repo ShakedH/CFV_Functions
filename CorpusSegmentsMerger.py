@@ -42,7 +42,8 @@ def call_server_index_update(blob_name):
     data = {'videoID': blob_name}
     # update corpus index
     r = requests.post(server_url + "/createUpdateWhooshIndex", data=json.dumps(data))
-    print(r.status_code, r.reason)
+    print("Response status code:", r.status_code)
+    print(r.text)
 
 
 if __name__ == '__main__':
