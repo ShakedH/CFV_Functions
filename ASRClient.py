@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../myenv/Lib/site-packages')))
 
 import math
 import json
@@ -10,14 +10,14 @@ import requests
 import itertools
 import speech_recognition as sr
 from threading import Thread
-from urllib import urlencode
-from urllib2 import urlopen, Request, HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen, Request, HTTPError, URLError
 from azure.storage.queue import QueueService
 from azure.cosmosdb.table import TableService, Entity
 from azure.storage.blob import BlockBlobService, PublicAccess
 
-storage_acc_name = 'cfvtes9c07'
-storage_acc_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
+storage_acc_name = 'ctrlfvfunctionaa670'
+storage_acc_key = 'MoPjP9rLlfN8nK4+uejH6fSCwZHOqqvvfwVa6Ais3emwtGlly59oCS2Z8VQ+8OiKzzVwMghRImUPddVyMPAN9Q=='
 table_service = TableService(storage_acc_name, storage_acc_key)
 
 
@@ -121,7 +121,7 @@ def process_segment(audio, ID, start_time, index, q_name):
         # add start time and transcript to dic
         _time_transcript_dic[int(start_time)] = data['transcript']
     except Exception as e:
-        print e
+        print (e)
 
 
 # endregion
@@ -129,7 +129,7 @@ def process_segment(audio, ID, start_time, index, q_name):
 # region Confidence
 def update_confidence_in_metadata(vid_id, confidence):
     print("Updating VMD with confidence...")
-    server_url = 'https://cfvtest.azurewebsites.net'
+    server_url = 'https://ctrl-fvideos.azurewebsites.net'
     data = {'videoID': vid_id, 'columnName': 'confidence', 'columnValue': confidence}
     r = requests.post(server_url + "/updateVMD", data=json.dumps(data))
     print(r.status_code, r.reason)
@@ -143,14 +143,14 @@ _time_transcript_dic = {}
 
 def save_dic_to_blob(vid_id):
     # save dic as blob
-    account_name = 'cfvtes9c07'
-    account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
+    account_name = 'ctrlfvfunctionaa670'
+    account_key = 'MoPjP9rLlfN8nK4+uejH6fSCwZHOqqvvfwVa6Ais3emwtGlly59oCS2Z8VQ+8OiKzzVwMghRImUPddVyMPAN9Q=='
     corpus_seg_container_name = "corpus-segments-container"
     blob_name = vid_id + ".txt"
     print("saving dic as blob...")
     block_blob_service = BlockBlobService(account_name, account_key)
     block_blob_service.create_blob_from_text(corpus_seg_container_name, blob_name,
-                                             json.dumps(_time_transcript_dic.items()))
+                                             json.dumps(list(_time_transcript_dic.items())))
     # add message to asr-to-CorpusSegMerger queue
     queue_service = QueueService(account_name=account_name, account_key=account_key)
     queue_name = "asr-to-corpus-seg-merger-q"
@@ -175,8 +175,9 @@ def main():
 
     print('Started processing file')
 
-    audio_container_name = "audiocontainer"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name, file_name)
+    audio_container_name = "audio-container"
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
+                                                                         file_name)
     audio_obj = urlopen(audio_file_url)
 
     print('Finished Reading file named ' + file_name)
@@ -187,10 +188,12 @@ def main():
     segment_counter = 0
     global TOTAL_SEGMENTS
     TOTAL_SEGMENTS = math.ceil(max_duration / duration)
-    entity = Entity()
-    entity.PartitionKey = str(vid_id)
-    entity.RowKey = str(TOTAL_SEGMENTS)
-    table_service.insert_entity('VideosIndexProgress', entity)
+    # // is div
+    for i in range(int(TOTAL_SEGMENTS) // 200):
+        entity = Entity()
+        entity.PartitionKey = str(vid_id) + '_' + str(i)
+        entity.RowKey = str(TOTAL_SEGMENTS)
+        table_service.insert_entity('VideosIndexProgress', entity)
 
     print('Created Record in VideosIndexProgress Table')
 
@@ -208,7 +211,7 @@ def main():
     for t in threads:
         t.join()
     save_dic_to_blob(vid_id)
-    delete_blob(file_name, 'audiocontainer')
+    delete_blob(file_name, 'audio-container')
 
     print('Adding confidence to VideosMetaData table')
 
