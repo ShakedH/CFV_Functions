@@ -189,7 +189,7 @@ def main():
     global TOTAL_SEGMENTS
     TOTAL_SEGMENTS = math.ceil(max_duration / duration)
     # // is div
-    for i in range(int(TOTAL_SEGMENTS) // 200):
+    for i in range(int(TOTAL_SEGMENTS) // 200 + 1):
         entity = Entity()
         entity.PartitionKey = str(vid_id) + '_' + str(i)
         entity.RowKey = str(TOTAL_SEGMENTS)
