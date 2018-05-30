@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'env/Lib/site-packages')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../myenv/Lib/site-packages')))
 import json
 import numpy as np
 import urllib
@@ -9,10 +9,10 @@ from our_stopwords import stop_words
 from azure.storage.blob import BlockBlobService
 from azure.cosmosdb.table import TableService, Entity
 
-account_name = 'cfvtes9c07'
-account_key = 'DSTJn6a1dS9aaoJuuw6ZOsnrsiW9V1jODJyHtekkYkc3BWofGVQjS6/ICWO7v51VUpTHSoiZXVvDI66uqTnOJQ=='
-transcript_container_name = 'transcriptscontainer'
-videos_container_name = 'videoscontainer'
+account_name = 'ctrlfvfunctionaa670'
+account_key = 'MoPjP9rLlfN8nK4+uejH6fSCwZHOqqvvfwVa6Ais3emwtGlly59oCS2Z8VQ+8OiKzzVwMghRImUPddVyMPAN9Q=='
+transcript_container_name = 'transcript-container'
+videos_container_name = 'video-container'
 block_blob_service = BlockBlobService(account_name, account_key)
 table_service = TableService(account_name, account_key)
 context_margin = 5
@@ -52,7 +52,7 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
         try:
             entity = Entity()
             entity.PartitionKey = vid_id
-            entity.RowKey = urllib.quote_plus(term)
+            entity.RowKey = urllib.parse.quote_plus(term)
             entity.Status = 'Unscanned'
             for timestamp in video_inverted_index[term]:
                 sentence = video_inverted_index[term][timestamp]
@@ -67,7 +67,7 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
 def update_video_index_progress_table(ID, total_segments, index):
     try:
         entity = Entity()
-        entity.PartitionKey = ID
+        entity.PartitionKey = ID + '_' + str(int(index) // 200)
         entity.RowKey = total_segments
         entity['t_' + str(index)] = index
         print('entity #' + str(index))
