@@ -175,13 +175,19 @@ def main():
     vid_id = message_obj['ID']
     max_duration = float(message_obj['duration'])
 
+    # region Debug
+    # file_name = "Data_structures_Binary_Tree.wav"
+    # vid_id = "Data_structures_Binary_Tree.mp4"
+    # max_duration = 976.5
+    # endregion
+
     print('Started processing file')
 
     audio_container_name = "audio-container"
     audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name, file_name)
     audio_obj = urlopen(audio_file_url)
 
-    print('Finished Reading file named ' + file_name)
+    print('Finished reading file named:', file_name)
 
     r = sr.Recognizer()
     start = 0
@@ -196,18 +202,22 @@ def main():
         entity.RowKey = str(TOTAL_SEGMENTS)
         table_service.insert_entity('VideosIndexProgress', entity)
 
-    print('Created Record in VideosIndexProgress Table')
+    print('Created records in VideosIndexProgress Table')
 
     global SEGMENTS_CONFIDENCE
     SEGMENTS_CONFIDENCE = []
     threads = []
     with sr.AudioFile(audio_obj) as source:
+        # r.record doesn't read exactly 'duration' seconds of the audio source, but a bit more = actual_duration
+        seconds_per_buffer = (source.CHUNK + 0.0) / source.SAMPLE_RATE
+        buffers_per_duration = math.ceil(duration / seconds_per_buffer)
+        actual_duration = seconds_per_buffer * buffers_per_duration
         while start < max_duration:
-            audio = r.record(source, duration=min(max_duration - start, duration))  # read the entire audio file
+            audio = r.record(source, duration=min(max_duration - start, duration))  # although 'duration' is passed, 'actual_duration' will be read
             t = Thread(target=process_segment, args=(audio, vid_id, start, segment_counter, 'asr-to-parser-q'))
             threads.append(t)
             t.start()
-            start += duration
+            start += actual_duration
             print("start time of segment:", str(start))
             segment_counter += 1
     for t in threads:
