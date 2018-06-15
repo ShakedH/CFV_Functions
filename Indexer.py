@@ -39,7 +39,7 @@ def create_video_inverted_index(transcript, timestamps):
         start_time = word_data[1]
         word = word_data[0]
         parsed_word = parse_word(word)
-        if not parsed_word:
+        if not parsed_word or parsed_word == "%hesitation":
             continue
         if parsed_word not in video_inverted_index:
             video_inverted_index[parsed_word] = {}
@@ -53,14 +53,13 @@ def update_inverted_indexes_azure_table(vid_id, video_inverted_index):
             entity = Entity()
             entity.PartitionKey = vid_id
             entity.RowKey = urllib.parse.quote_plus(term)
-            entity.Status = 'Unscanned'
             for timestamp in video_inverted_index[term]:
                 sentence = video_inverted_index[term][timestamp]
                 # property name for start time 21.19 will be t_21_19
                 entity['t_' + str(timestamp).replace('.', '_')] = sentence
             table_service.insert_or_merge_entity('VideosInvertedIndexes', entity)
         except Exception as e:
-            print ('Failed adding term ' + term)
+            print('Failed adding term', term)
             print(e)
 
 

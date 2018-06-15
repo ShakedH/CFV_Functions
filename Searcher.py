@@ -23,8 +23,8 @@ def get_videos_by_term(search_term):
 def get_video_ids_by_term(search_term):
     table_service = TableService(account_name=storage_acc_name, account_key=storage_acc_key)
     vid_ids = table_service.query_entities(table_name='CorpusInvertedIndex',
-                                     filter='PartitionKey eq \'' + search_term + '\'',
-                                     select='RowKey')
+                                           filter='PartitionKey eq \'' + search_term + '\'',
+                                           select='RowKey')
     if not vid_ids.items or len(vid_ids.items) == 0:
         return []
     video_ids = {record['RowKey'] for record in vid_ids.items}
@@ -57,8 +57,9 @@ def get_sql_cnxn():
         'DRIVER=' + driver + ';PORT=1433;SERVER=' + server + ';PORT=1443;DATABASE=' + database + ';UID=' + username + ';PWD=' + server_password)
     return cnxn
 
+
 if __name__ == '__main__':
-    print ("new request")
+    print("new request")
     search_term = _postreqdata['searchKey'].lower()
     dic = get_videos_by_term(search_term)
     response = open(os.environ['res'], 'w')

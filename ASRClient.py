@@ -53,13 +53,15 @@ def recognize_ibm(audio_data, username, password, language="en-US", show_all=Fal
     result = json.loads(response_text)
 
     # return results
-    if show_all: return result
+    if show_all:
+        return result
     if "results" not in result or len(result["results"]) < 1 or "alternatives" not in result["results"][0]:
         raise sr.UnknownValueError()
 
     transcription = []
     for utterance in result["results"]:
-        if "alternatives" not in utterance: raise sr.UnknownValueError()
+        if "alternatives" not in utterance:
+            raise sr.UnknownValueError()
         for hypothesis in utterance["alternatives"]:
             if "transcript" in hypothesis:
                 transcription.append(hypothesis["transcript"])
@@ -121,7 +123,7 @@ def process_segment(audio, ID, start_time, index, q_name):
         # add start time and transcript to dic
         _time_transcript_dic[int(start_time)] = data['transcript']
     except Exception as e:
-        print (e)
+        print(e)
 
 
 # endregion
@@ -176,8 +178,7 @@ def main():
     print('Started processing file')
 
     audio_container_name = "audio-container"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
-                                                                         file_name)
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name, file_name)
     audio_obj = urlopen(audio_file_url)
 
     print('Finished Reading file named ' + file_name)
@@ -207,6 +208,7 @@ def main():
             threads.append(t)
             t.start()
             start += duration
+            print("start time of segment:", str(start))
             segment_counter += 1
     for t in threads:
         t.join()

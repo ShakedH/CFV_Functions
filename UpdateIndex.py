@@ -11,8 +11,8 @@ source_azure_table = 'VideosInvertedIndexes'
 
 
 def update_corpus_inverted_index():
-    new_entites = table_service.query_entities(source_azure_table, filter="Status eq 'Unscanned'")
-    for new_entity in new_entites:
+    new_entities = table_service.query_entities(source_azure_table, filter="Status eq 'Unscanned'")
+    for new_entity in new_entities:
         corpus_entity = Entity()
         corpus_entity.PartitionKey = new_entity.RowKey
         corpus_entity.RowKey = new_entity.PartitionKey
