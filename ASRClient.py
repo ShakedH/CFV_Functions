@@ -211,7 +211,7 @@ def main():
         # r.record doesn't read exactly 'duration' seconds of the audio source, but a bit more = actual_duration
         seconds_per_buffer = (source.CHUNK + 0.0) / source.SAMPLE_RATE
         buffers_per_duration = math.ceil(duration / seconds_per_buffer)
-        actual_duration = seconds_per_buffer * buffers_per_duration
+        actual_duration = round(seconds_per_buffer * buffers_per_duration, 2)
         while start < max_duration:
             audio = r.record(source, duration=min(max_duration - start, duration))  # although 'duration' is passed, 'actual_duration' will be read
             t = Thread(target=process_segment, args=(audio, vid_id, start, segment_counter, 'asr-to-parser-q'))
