@@ -184,7 +184,8 @@ def main():
     print('Started processing file')
 
     audio_container_name = "audio-container"
-    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name, file_name)
+    audio_file_url = r"https://{0}.blob.core.windows.net/{1}/{2}".format(storage_acc_name, audio_container_name,
+                                                                         file_name)
     audio_obj = urlopen(audio_file_url)
 
     print('Finished reading file named:', file_name)
@@ -193,16 +194,6 @@ def main():
     start = 0
     duration = 10.0
     segment_counter = 0
-    global TOTAL_SEGMENTS
-    TOTAL_SEGMENTS = math.ceil(max_duration / duration)
-    # // is div
-    for i in range(int(TOTAL_SEGMENTS) // 200 + 1):
-        entity = Entity()
-        entity.PartitionKey = str(vid_id) + '_' + str(i)
-        entity.RowKey = str(TOTAL_SEGMENTS)
-        table_service.insert_entity('VideosIndexProgress', entity)
-
-    print('Created records in VideosIndexProgress Table')
 
     global SEGMENTS_CONFIDENCE
     SEGMENTS_CONFIDENCE = []
@@ -212,8 +203,21 @@ def main():
         seconds_per_buffer = (source.CHUNK + 0.0) / source.SAMPLE_RATE
         buffers_per_duration = math.ceil(duration / seconds_per_buffer)
         actual_duration = round(seconds_per_buffer * buffers_per_duration, 2)
+
+        global TOTAL_SEGMENTS
+        TOTAL_SEGMENTS = math.ceil(max_duration / actual_duration)
+        # // is div
+        for i in range(int(TOTAL_SEGMENTS) // 200 + 1):
+            entity = Entity()
+            entity.PartitionKey = str(vid_id) + '_' + str(i)
+            entity.RowKey = str(TOTAL_SEGMENTS)
+            table_service.insert_entity('VideosIndexProgress', entity)
+
+        print('Created records in VideosIndexProgress Table')
+
         while start < max_duration:
-            audio = r.record(source, duration=min(max_duration - start, duration))  # although 'duration' is passed, 'actual_duration' will be read
+            audio = r.record(source, duration=min(max_duration - start,
+                                                  duration))  # although 'duration' is passed, 'actual_duration' will be read
             t = Thread(target=process_segment, args=(audio, vid_id, start, segment_counter, 'asr-to-parser-q'))
             threads.append(t)
             t.start()
